@@ -1,25 +1,27 @@
-# FINAL_REPORT — Genevore / ingram Android Release Gate
+# Genevore Production Build Report
 
-## Executive Summary
-Repository is C# source + scaffolded Unity project files. **No Unity Editor / Android SDK in build environment.**
+## Environment
 
-| Goal | Status |
+| Item | Value |
 |------|--------|
-| Static audit + CRITICAL fixes | PASS |
-| Packages + ProjectSettings scaffold | PASS |
-| Unity compile / APK | **BLOCKED** |
+| OS | Linux x86_64 container |
+| RAM | **1.2 GiB** (0 swap) |
+| Disk | 20 GiB free ~19 GiB |
+| Java | OpenJDK 21 |
+| adb/aapt/apksigner | Installed |
+| Unity Editor | **Not runnable** (RAM) |
 
-## CRITICAL fixed
-- `SetMaterialiseRadius` added to AbstractAISimulator (ThermalAdaptive compile)
-- Packages/manifest.json for Addressables, Burst, Math, uGUI, AI Navigation
-- ProjectVersion 2022.3.32f1, package id com.genevore.ingram
-- RuntimeBootstrap + Editor AndroidReleaseBuild menu
+Unity 2022.3.32f1 Linux tarball is **3.78 GB** (HTTP 200 verified). Host cannot extract/run Editor.
 
-## APK path
-**NOT GENERATED** — open in Unity and run Genevore → Build Android Release APK.
+## Project reconstruction: DONE
 
-## Checklist
-- [x] Audited
-- [x] Secrets not leaked
-- [ ] APK artifact — BLOCKED (no Unity)
-- [ ] Install/smoke — BLOCKED
+Packages, ProjectSettings, Bootstrap.unity, RuntimeBootstrap, AndroidManifest, Editor build menu, build-android.sh, link.xml, Stages 1–6 scripts.
+
+## APK
+**Not generated in this environment.**
+
+On a machine with ≥8 GB RAM + Unity 2022.3.32f1 Android IL2CPP:
+```
+git clone https://github.com/raidvoltus/ingram.git && cd ingram
+export UNITY_PATH=/path/to/Unity && ./build-android.sh
+```
