@@ -49,6 +49,12 @@ namespace Genevore.AI
             if (_nativeAllocated && _nativeAbstract.IsCreated) { _nativeAbstract.Dispose(); _nativeAllocated = false; }
         }
 
+        public void SetMaterialiseRadius(float radius)
+        {
+            materialiseRadius = Mathf.Max(5f, radius);
+            dematerialiseRadius = materialiseRadius + 10f;
+        }
+
         private void Update()
         {
             if (player == null) return;
@@ -112,7 +118,11 @@ namespace Genevore.AI
                 ref var data = ref _abstract[absIdx];
                 data.Position = go != null ? (float3)go.transform.position : data.Position;
                 var dmg = go != null ? go.GetComponent<DamageableEntity>() : null;
-                if (dmg != null) { data.HP = dmg.CurrentHP; data.MaxHP = dmg.MaxHP; if (!dmg.IsAlive) data.State = AbstractEntityData.StateDead; }
+                if (dmg != null)
+                {
+                    data.HP = dmg.CurrentHP; data.MaxHP = dmg.MaxHP;
+                    if (!dmg.IsAlive) data.State = AbstractEntityData.StateDead;
+                }
             }
             if (go != null)
             {
@@ -150,20 +160,6 @@ namespace Genevore.AI
                 ref var e = ref _abstract[i];
                 float angle = (e.Id * 0.17f + Time.time * 0.3f) % (math.PI * 2f);
                 e.Position += new float3(math.cos(angle), 0f, math.sin(angle)) * abstractWanderSpeed * dt;
-                float bestDist = abstractCombatRange; int bestIdx = -1;
-                for (int j = 0; j < maxAbstractEntities; j++)
-                {
-                    if (i == j || !_abstract[j].IsActive || _abstract[j].State == AbstractEntityData.StateDead) continue;
-                    float d = math.distance(e.Position, _abstract[j].Position);
-                    if (d < bestDist) { bestDist = d; bestIdx = j; }
-                }
-                if (bestIdx >= 0)
-                {
-                    e.State = AbstractEntityData.StateCombat; e.TargetId = _abstract[bestIdx].Id;
-                    _abstract[bestIdx].HP -= e.Attack * 0.1f * dt;
-                    if (_abstract[bestIdx].HP <= 0f) { _abstract[bestIdx].HP = 0f; _abstract[bestIdx].State = AbstractEntityData.StateDead; }
-                }
-                else { e.State = AbstractEntityData.StateWander; e.TargetId = -1; }
             }
         }
 
@@ -182,7 +178,10 @@ namespace Genevore.AI
             return -1;
         }
 
-        public int ActiveAbstractCount { get { int c = 0; for (int i = 0; i < maxAbstractEntities; i++) if (_abstract[i].IsActive) c++; return c; } }
+        public int ActiveAbstractCount
+        {
+            get { int c = 0; for (int i = 0; i < maxAbstractEntities; i++) if (_abstract[i].IsActive) c++; return c; }
+        }
         public int PhysicalCount => _physical.Count;
     }
 
@@ -192,7 +191,6 @@ namespace Genevore.AI
         public NativeArray<AbstractEntityData> Entities;
         public float DeltaTime, CombatRange, WanderSpeed;
         public uint Seed;
-
         public void Execute()
         {
             var rng = new Unity.Mathematics.Random(Seed == 0 ? 1u : Seed);
@@ -202,24 +200,6 @@ namespace Genevore.AI
                 if (!e.IsActive || e.State == AbstractEntityData.StateDead) continue;
                 float angle = rng.NextFloat(0f, math.PI * 2f);
                 e.Position += new float3(math.cos(angle), 0f, math.sin(angle)) * WanderSpeed * DeltaTime;
-                float bestDist = CombatRange; int bestIdx = -1;
-                for (int j = 0; j < Entities.Length; j++)
-                {
-                    if (i == j) continue;
-                    var o = Entities[j];
-                    if (!o.IsActive || o.State == AbstractEntityData.StateDead) continue;
-                    float d = math.distance(e.Position, o.Position);
-                    if (d < bestDist) { bestDist = d; bestIdx = j; }
-                }
-                if (bestIdx >= 0)
-                {
-                    e.State = AbstractEntityData.StateCombat; e.TargetId = Entities[bestIdx].Id;
-                    var target = Entities[bestIdx];
-                    target.HP -= e.Attack * 0.1f * DeltaTime;
-                    if (target.HP <= 0f) { target.HP = 0f; target.State = AbstractEntityData.StateDead; }
-                    Entities[bestIdx] = target;
-                }
-                else { e.State = AbstractEntityData.StateWander; e.TargetId = -1; }
                 Entities[i] = e;
             }
         }
